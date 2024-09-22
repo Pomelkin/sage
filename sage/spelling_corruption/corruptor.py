@@ -119,8 +119,8 @@ class SBSCCorruptor(Corruptor):
     def corrupt(self, sentence: str, action: Optional[str] = None) -> str:
         return self.engine.corrupt(sentence)
 
-    def batch_corrupt(self, sentences: List[str], action: Optional[str] = None, batch_prob: Optional[float] = 0.3) -> \
-    List[str]:
+    def batch_corrupt(self, sentences: List[str], action: Optional[str] = None,
+                      batch_prob: Optional[float] = 0.3) -> List[str]:
         return self.engine.batch_corrupt(sentences)
 
     @staticmethod

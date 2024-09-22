@@ -57,7 +57,6 @@ class StatisticBasedSpellingCorruption:
         typos_count_ = None
         stats_ = None
         confusion_matrix_ = None
-        self.rng = np.random.default_rng(random_seed)
 
         if (typos_count is None or stats is None or confusion_matrix is None) and reference_dataset_name_or_path is None:
             raise RuntimeError('''You should provide at least one of :typos_count:/:stats:/:confusion_matrix:
@@ -119,6 +118,7 @@ class StatisticBasedSpellingCorruption:
             confusion_matrix=confusion_matrix_,
             skip_if_position_not_found=skip_if_position_not_found,
             lang=lang,
+            random_seed=random_seed
         )
 
     @staticmethod
@@ -132,6 +132,6 @@ class StatisticBasedSpellingCorruption:
         result = []
         pb = tqdm(total=len(sentences))
         for sentence in sentences:
-            result.append(self.model.transform(sentence, self.rng))
+            result.append(self.model.transform(sentence))
             pb.update(1)
         return result

@@ -88,7 +88,7 @@ To install extra requirements that you are going to need when working with ERRAN
 
 ```commandline
 python -m spacy download ru_core_news_lg
-pip install -e .[errant]
+pip install -e ".[errant]"
 ```
 
 ### Editable install

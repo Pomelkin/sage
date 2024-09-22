@@ -34,7 +34,7 @@ class BaseConfig:
 
     random_seed: Optional[int] = field(
         default=42,
-        metadata={"help": "The minimum amount of augmentation. Defaults to 1."},
+        metadata={"help": "The random state for the application of augmentations."},
     )
 
 

@@ -29,7 +29,7 @@ extras_requirements = {
 }
 
 setup(
-    name="sage",
+    name="sage-spelling",
     version="1.1.0",
     author="Nikita Martynov, Mark Baushenko, Alena Fenogenova and Alexandr Abramov",
     author_email="nikita.martynov.98@list.ru",

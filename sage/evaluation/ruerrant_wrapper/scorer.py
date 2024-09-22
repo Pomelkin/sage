@@ -6,6 +6,7 @@ error classification and are described in detail in the readme.
 """
 
 from __future__ import annotations
+
 import re
 from collections import Counter, namedtuple
 from typing import Iterable

@@ -2,7 +2,6 @@ import os
 
 from sage.spelling_corruption import WordAugCorruptor, CharAugCorruptor, SBSCCorruptor
 from sage.spelling_corruption import WordAugConfig, CharAugConfig, SBSCConfig
-from augmentex import WordAug
 
 corrections = [
     "Я пошёл домой. Больше мне тут делать нечего",
