@@ -85,12 +85,10 @@ pip install .
 ```
 
 To install extra requirements that you are going to need when working with ERRANT-based metric run
+
 ```commandline
+python -m spacy download ru_core_news_lg
 pip install -e ".[errant]"
-```
-or just
-```commandline
-pip install -e .[errant]
 ```
 
 ### Editable install

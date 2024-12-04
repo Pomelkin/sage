@@ -2,7 +2,7 @@
 
 Examples:
     corruptor = StatisticBasedSpellingCorruption(
-        lang="ru",
+        lang="rus",
         reference_dataset_name_or_path="RUSpellRU",
     )
     print(corruptor.corrupt(sentence))
@@ -14,7 +14,7 @@ Examples:
     sources, corrections = load_data(...)
     typos_cnt, cm, stats = process_mistypings(sources, corrections)
     corruptor = StatisticBasedSpellingCorruption(
-        lang="ru",
+        lang="rus",
         typos_count=typos_cnt,
         stats=stats,
         confusion_matrix=cm,
@@ -52,6 +52,7 @@ class StatisticBasedSpellingCorruption:
             skip_if_position_not_found: bool = True,
             reference_dataset_name_or_path: Optional[Union[str, os.PathLike]] = None,
             reference_dataset_split: str = "train",
+            random_seed: Optional[int] = 42
     ):
         typos_count_ = None
         stats_ = None
@@ -117,20 +118,20 @@ class StatisticBasedSpellingCorruption:
             confusion_matrix=confusion_matrix_,
             skip_if_position_not_found=skip_if_position_not_found,
             lang=lang,
+            random_seed=random_seed
         )
 
     @staticmethod
     def show_reference_datasets_available():
         print(*datasets_available, sep="\n")
 
-    def corrupt(self, sentence: str, seed: int) -> str:
-        return self.batch_corrupt([sentence], seed)[0]
+    def corrupt(self, sentence: str) -> str:
+        return self.batch_corrupt([sentence])[0]
 
-    def batch_corrupt(self, sentences: List[str], seed: int) -> List[str]:
+    def batch_corrupt(self, sentences: List[str]) -> List[str]:
         result = []
         pb = tqdm(total=len(sentences))
-        rng = np.random.default_rng(seed)
         for sentence in sentences:
-            result.append(self.model.transform(sentence, rng))
+            result.append(self.model.transform(sentence))
             pb.update(1)
         return result
