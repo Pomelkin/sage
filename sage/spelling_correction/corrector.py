@@ -27,7 +27,6 @@ from transformers import T5PreTrainedModel, T5ForConditionalGeneration
 
 from .training.data_processor import get_tokenized_datasets, TextCollatorWithPadding
 from .training.trainer import SageTrainer
-from ..evaluation.scorer import Scorer
 from ..utils.data_load_utils import load_available_dataset_from_hf, DatasetsAvailable
 from .models import T5ForConditionalGenerationTokenMultilabel, T5ForConditionalGenerationTokenMulticlass, \
     T5ForConditionalGenerationTokenMultilabelLM, T5ForConditionalGenerationLM
@@ -107,6 +106,7 @@ class Corrector(metaclass=ABCMeta):
         :return: mapping between metric's name and its corresponding value
         :rtype: dict[str, float]
         """
+        from ..evaluation.scorer import Scorer
         dataset_name_or_path = str(dataset_name_or_path)
         if dataset_name_or_path in datasets_available:
             sources, corrections = load_available_dataset_from_hf(

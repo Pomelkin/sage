@@ -14,9 +14,9 @@ requirements = [
     "datasets<2.20.0",
     "protobuf",
     "timeout_decorator",
-    "matplotlib>=3.2,<3.7",
-    "torch>=1.9.0,<=2.2.0",
-    "transformers>=4.20.0",
+    "matplotlib>=3.2,<3.9.1",
+    "torch>=1.9.0,<=2.5.1",
+    "transformers>=4.20.0,<=4.46.0",
     "augmentex==1.3.1",
     "accelerate",
     "evaluate"
