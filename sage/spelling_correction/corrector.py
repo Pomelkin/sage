@@ -29,7 +29,7 @@ from .training.data_processor import get_tokenized_datasets, TextCollatorWithPad
 from .training.trainer import SageTrainer
 from ..evaluation.scorer import Scorer
 from ..utils.data_load_utils import load_available_dataset_from_hf, DatasetsAvailable
-from models import T5ForConditionalGenerationTokenMultilabel, T5ForConditionalGenerationTokenMulticlass, \
+from .models import T5ForConditionalGenerationTokenMultilabel, T5ForConditionalGenerationTokenMulticlass, \
     T5ForConditionalGenerationTokenMultilabelLM, T5ForConditionalGenerationLM
 
 datasets_available = [dataset.name for dataset in DatasetsAvailable]

@@ -18,6 +18,8 @@ requirements = [
     "torch>=1.9.0,<=2.2.0",
     "transformers>=4.20.0",
     "augmentex==1.3.1",
+    "accelerate",
+    "evaluate"
 ]
 
 extras_requirements = {

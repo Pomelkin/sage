@@ -5,7 +5,7 @@ import torch
 import Levenshtein
 from datasets import concatenate_datasets
 from torch.nn.utils.rnn import pad_sequence
-from data_utils import make_ner_multiclass, make_ner_multilabel, make_ner_multilabel_delete, get_levenshtein_mask, \
+from .data_utils import make_ner_multiclass, make_ner_multilabel, make_ner_multilabel_delete, get_levenshtein_mask, \
     get_datasets
 from ..corruptors import corruptors_names
 
