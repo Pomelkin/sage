@@ -6,7 +6,6 @@ from tqdm.auto import tqdm
 from evaluate import load
 from transformers import Adafactor, get_scheduler
 
-from ...evaluation.ruspelleval import extract_words, evaluation
 
 optimizers_names = {
     'adamw': lambda parameters, lr, weight_decay: AdamW(parameters, lr=lr, weight_decay=weight_decay),
@@ -170,9 +169,8 @@ class SageTrainer:
                     answers.extend(self.tokenizer.batch_decode(pred_ids, skip_special_tokens=True))
             running_loss.update(outputs.loss.item(), outputs.size(0))
         if self.mode == 'finetune':
-            metrics = evaluation(sources, corrections, answers)
-            metrics['custom_metric'] = self.metric.compute(predictions=[' '.join(extract_words(x)) for x in answers],
-                                                           references=[' '.join(extract_words(x)) for x in corrections])
+            metrics['custom_metric'] = self.metric.compute(predictions=answers,
+                                                           references=corrections)
             metrics = {f"Valid/{k}": v for k, v in metrics.items()}
         else:
             metrics = {}
