@@ -13,6 +13,7 @@ dataset:
     path_to_tokenized: "augmentex_data"
     force_tokenize: True
     max_length: 256
+    num_workers: 4
     source_col: "text"
     correct_col: "correction"
     corruptors:
@@ -35,6 +36,7 @@ weight_decay: 0.01
 learning_rate: 0.001
 scheduler: "constant"
 checkpoint_path: "pretrain_fredt5_xl_multilabel_tagging"
+logging_path: "logs"
 mode: "pretrain"
 valid: False
 save_steps: 10000000
