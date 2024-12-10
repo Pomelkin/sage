@@ -171,6 +171,7 @@ class Corrector(metaclass=ABCMeta):
             config = yaml.safe_load(infile)
         accelerator = Accelerator(mixed_precision=config['mixed_precision'],
                                   log_with=config['tracker_name'],
+                                  project_dir=config['logging_path'],
                                   gradient_accumulation_steps=config['gradient_accumulation_steps'],
                                   split_batches=True)
         accelerator.init_trackers(
@@ -198,7 +199,7 @@ class Corrector(metaclass=ABCMeta):
                                   batch_size=config['batch_size'],
                                   shuffle=False,
                                   pin_memory=False,
-                                  num_workers=48,
+                                  num_workers=config['dataset']['num_workers'],
                                   collate_fn=TextCollatorWithPadding(self.tokenizer, self.model))
         valid = config['valid']
         if valid_tokenized is not None:
@@ -206,7 +207,7 @@ class Corrector(metaclass=ABCMeta):
                                       batch_size=config['batch_size'],
                                       shuffle=False,
                                       pin_memory=False,
-                                      num_workers=48,
+                                      num_workers=config['dataset']['num_workers'],
                                       collate_fn=TextCollatorWithPadding(self.tokenizer, self.model))
         else:
             valid_loader = None

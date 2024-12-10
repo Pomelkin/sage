@@ -195,7 +195,8 @@ def get_tokenized_datasets(tokenizer,
                            corrupt_mode,
                            encoder_tasks,
                            truncate_targets,
-                           custom_mask):
+                           custom_mask,
+                           num_workers):
     raw_datasets = get_datasets(format, data_files)
     train_file = os.path.join(path_to_tokenized, 'train_tokenized.pkl')
     valid_file = os.path.join(path_to_tokenized, 'valid_tokenized.pkl')
@@ -213,7 +214,7 @@ def get_tokenized_datasets(tokenizer,
                                                         batched=True,
                                                         remove_columns=raw_datasets['train'].column_names,
                                                         keep_in_memory=False,
-                                                        num_proc=os.cpu_count() // 4)
+                                                        num_proc=num_workers)
             with open(train_file, 'wb') as outfile:
                 pickle.dump(train_tokenized, outfile)
     if len(raw_datasets.keys()) == 1:
@@ -228,7 +229,7 @@ def get_tokenized_datasets(tokenizer,
             batched=True,
             remove_columns=raw_datasets['train'].column_names,
             keep_in_memory=False,
-            num_proc=os.cpu_count() // 4)
+            num_proc=num_workers)
         with open(valid_file, 'wb') as outfile:
             pickle.dump(valid_tokenized, outfile)
 
