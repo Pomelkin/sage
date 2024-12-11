@@ -187,8 +187,6 @@ class Corrector(metaclass=ABCMeta):
                     'learning_rate': config['learning_rate'],
                     'scheduler': config['scheduler'],
                     'mode': config['mode'],
-                    'corruptor': config['dataset']['corruptors'],
-                    'encoder_task': config['dataset']['encoder_tasks'],
                     'checkpoint_path': config['checkpoint_path']
                     }
         )
