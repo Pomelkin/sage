@@ -167,7 +167,7 @@ class SageTrainer:
                                                                                       'attention_mask'],
                                                                                   **self.gen_params)
                     answers.extend(self.tokenizer.batch_decode(pred_ids, skip_special_tokens=True))
-            running_loss.update(outputs.loss.item(), outputs.size(0))
+            running_loss.update(outputs.loss.item(), batch['input_ids'].size(0))
         if self.mode == 'finetune':
             metrics['custom_metric'] = self.metric.compute(predictions=answers,
                                                            references=corrections)
