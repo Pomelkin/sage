@@ -51,7 +51,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Text Editors :: Text Processing",
     ],
-    python_requires=">=3.8.0,<=3.12.3",
+    python_requires=">=3.8.0,<=3.12.6",
     install_requires=requirements,
     extras_require=extras_requirements,
     keywords="sage spelling correction nlp deep learning transformers pytorch"

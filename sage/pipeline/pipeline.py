@@ -85,7 +85,7 @@ class AugmentationPipeline:
         """
         self.augmenters = [self.augmenters[i] for i in order]
 
-    def augment(self, text: str, seed: Optional[int] = None) -> str:
+    def augment(self, text: str) -> str:
         """
         Applies all augmenters in the pipeline to the given text.
 
@@ -97,5 +97,5 @@ class AugmentationPipeline:
             str: The augmented text.
         """
         for augmenter in self.augmenters:
-            text = augmenter.augment(text, seed=seed)
+            text = augmenter.augment(text)
         return text

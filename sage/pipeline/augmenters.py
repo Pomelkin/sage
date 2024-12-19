@@ -22,21 +22,21 @@ class CharAugmenter(Augmenter):
     def __init__(self, config: CharAugConfig):
         self.corruptor = CharAugCorruptor.from_config(config)
 
-    def augment(self, text: str, seed: Optional[int] = None) -> str:
-        return self.corruptor.corrupt(text, seed=seed)
+    def augment(self, text: str) -> str:
+        return self.corruptor.corrupt(text)
 
 
 class WordAugmenter(Augmenter):
     def __init__(self, config: WordAugConfig):
         self.corruptor = WordAugCorruptor.from_config(config)
 
-    def augment(self, text: str, seed: Optional[int] = None) -> str:
-        return self.corruptor.corrupt(text, seed=seed)
+    def augment(self, text: str) -> str:
+        return self.corruptor.corrupt(text)
 
 
 class SBSCorruptor(Augmenter):
     def __init__(self, config: SBSCConfig):
         self.corruptor = SBSCCorruptor.from_config(config)
 
-    def augment(self, text: str, seed: Optional[int] = None) -> str:
-        return self.corruptor.corrupt(text, seed=seed)
+    def augment(self, text: str) -> str:
+        return self.corruptor.corrupt(text)

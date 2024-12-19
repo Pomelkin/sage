@@ -3,7 +3,7 @@ from sage.utils import DatasetsAvailable
 
 
 class PipelineConfig:
-    def __init__(self, lang: str = 'ru'):
+    def __init__(self, lang: str = 'rus'):
         self.char_min_aug: int = 1
         self.char_max_aug: int = 3
         self.char_unit_prob: float = 0.2
@@ -38,11 +38,11 @@ class PipelineConfig:
             lang (str): The language code ('ru' or 'en').
         """
         self.sbsc_lang = lang
-        if lang == 'en':
+        if lang == 'eng':
             base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
             self.sbsc_reference_dataset_name_or_path = os.path.join(base_dir, "data", "example_data", "jfleg")
-        elif lang != 'ru':
-            raise ValueError("Unsupported language. Supported languages are 'ru' and 'en'.")
+        elif lang != 'rus':
+            raise ValueError("Unsupported language. Supported languages are 'rus' and 'eng'.")
 
     @property
     def char_params(self):

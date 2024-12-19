@@ -589,7 +589,7 @@ class AugmenterTests(unittest.TestCase):
             "lang": LANG,
         }
         m = Model(**params)
-        result = m.transform(sentence, seed)
+        result = m.transform(sentence)
         self.assertEqual(result, "")
 
     def test_transform_single(self):
@@ -632,7 +632,7 @@ class AugmenterTests(unittest.TestCase):
             error2interval[k] = np.digitize(v["rel"][0], bins)
 
         for _ in range(len(stats) * 3):
-            result = m.transform(sentence, seed)
+            result = m.transform(sentence)
             global_stats, global_cm, mistypings_cnt = process_mistypings([result], [sentence])
 
             for k, v in global_stats.items():
@@ -680,7 +680,7 @@ class AugmenterTests(unittest.TestCase):
             error2interval[k] = np.digitize(v["rel"][0], bins)
         for i in range(15):
             sentence = "f" * i
-            result = m.transform(sentence, seed)
+            result = m.transform(sentence)
             global_stats, global_cm, mistypings_cnt = process_mistypings([result], [sentence])
             if sum(mistypings_cnt) == 0:
                 self.assertEqual(sentence, result)
@@ -1026,7 +1026,7 @@ class AugmenterTests(unittest.TestCase):
         m = Model(**params)
         results = []
         for sentence in sentences:
-            results.append(m.transform(sentence, seed))
+            results.append(m.transform(sentence))
 
         self.assertEqual(results[0], "")
         global_stats, global_cm, mistypings_cnt = process_mistypings(results[1:], sentences[1:])
