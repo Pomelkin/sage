@@ -128,9 +128,7 @@ class StatisticBasedSpellingCorruption:
 
     def batch_corrupt(self, sentences: List[str], seed: int) -> List[str]:
         result = []
-        pb = tqdm(total=len(sentences))
         rng = np.random.default_rng(seed)
         for sentence in sentences:
             result.append(self.model.transform(sentence, rng))
-            pb.update(1)
         return result
