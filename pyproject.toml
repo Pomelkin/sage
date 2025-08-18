@@ -1,22 +1,62 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "sage"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.1.0"
+description = "SAGE: Spell checking via Augmentation and Generative distribution Emulation"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "augmentex>=1.3.1",
-    "datasets>=4.0.0",
-    "matplotlib>=3.10.5",
-    "numpy>=2.3.2",
-    "packaging>=25.0",
-    "pandas>=2.3.1",
-    "protobuf>=6.32.0",
-    "pyyaml>=6.0.2",
-    "requests>=2.32.4",
-    "sentencepiece>=0.2.1",
-    "timeout-decorator>=0.5.0",
-    "torch>=2.8.0",
-    "tqdm>=4.67.1",
-    "transformers>=4.55.2",
+requires-python = ">=3.8.0"
+license = {text = "MIT"}
+authors = [
+    {name = "Nikita Martynov", email = "nikita.martynov.98@list.ru"},
+    {name = "Mark Baushenko"},
+    {name = "Alena Fenogenova"},
+    {name = "Alexandr Abramov"},
 ]
+keywords = ["sage", "spelling", "correction", "nlp", "deep learning", "transformers", "pytorch"]
+classifiers = [
+    "Natural Language :: English",
+    "Natural Language :: Russian", 
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Editors :: Text Processing",
+]
+
+dependencies = [
+    "numpy",
+    "pandas", 
+    "tqdm",
+    "pyyaml",
+    "packaging",
+    "requests",
+    "sentencepiece",
+    "datasets>=3.6.0",
+    "protobuf",
+    "timeout_decorator",
+    "matplotlib>=3.2",
+    "torch>=1.9.0",
+    "transformers>=4.20.0",
+    "augmentex>=1.0.3"
+]
+
+[project.optional-dependencies]
+errant = [
+    "ru-core-news-lg @ https://huggingface.co/spacy/ru_core_news_lg/resolve/main/ru_core_news_lg-any-py3-none-any.whl",
+    "errant @ git+https://github.com/Askinkaty/errant/@4183e57",
+    "Levenshtein",
+]
+
+[project.urls]
+Homepage = "https://github.com/orgs/ai-forever/sage"
+Repository = "https://github.com/orgs/ai-forever/sage"
+
+[tool.setuptools]
+packages = ["sage"]
+
+[tool.setuptools.package-discovery]
+where = ["."]
