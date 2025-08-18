@@ -5,3 +5,4 @@ sage.egg-info
 build
 .DS_Store
 .idea
+.venv
