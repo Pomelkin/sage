@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "sage"
 version = "1.1.0"
 description = "SAGE: Spell checking via Augmentation and Generative distribution Emulation"
 readme = "README.md"
-requires-python = ">=3.8.0"
+requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
     {name = "Nikita Martynov", email = "nikita.martynov.98@list.ru"},
@@ -55,8 +55,6 @@ errant = [
 Homepage = "https://github.com/orgs/ai-forever/sage"
 Repository = "https://github.com/orgs/ai-forever/sage"
 
-[tool.setuptools]
-packages = ["sage"]
-
-[tool.setuptools.package-discovery]
+[tool.setuptools.packages.find]
 where = ["."]
+include = ["sage*"]
