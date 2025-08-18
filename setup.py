@@ -16,7 +16,7 @@ requirements = [
     "packaging",
     "requests",
     "sentencepiece",
-    "datasets",
+    "datasets>=3.6.0",
     "protobuf",
     "timeout_decorator",
     "matplotlib>=3.2",
