@@ -45,9 +45,9 @@ def update_spacy_tokenizer(nlp):
 class RuErrantScorer:
     """A scorer to evaluate spelling correction triplets with ERRANT metric."""
 
-    def __init__(self) -> None:
+    def __init__(self, spacy_model: str) -> None:
         self.annotator = Annotator("ru",
-                                   nlp=update_spacy_tokenizer(spacy.load("ru_core_news_lg")),
+                                   nlp=update_spacy_tokenizer(spacy.load(spacy_model)),
                                    merger=merger,
                                    classifier=classifier)
 

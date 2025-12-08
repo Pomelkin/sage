@@ -1,0 +1,44 @@
+run_name: "pretrain_fredt5_xl_multilabel_tagging"
+dataset:
+    format: "csv"
+    data_files:
+        train:
+            ru:
+                - "path_to_train.csv"
+        dev:
+            ru:
+                - "path_to_val.csv"
+
+    path_to_tokenized: "augmentex_data"
+    force_tokenize: True
+    max_length: 256
+    num_workers: 4
+    source_col: "text"
+    correct_col: "correction"
+    corruptors:
+        ru: "ru_punc_randomcharaug_0.2"
+        en: "en_punc_randomcharaug_0.2"
+    corrupt_mode: "correct" # "correct"/"source"
+    encoder_tasks: ["multilabel_delete", "tagging"]
+    truncate_targets: True
+    custom_mask: False
+tracker_name: "clearml"
+model_type: "t5_encoder_multilabel_lm"
+tokenizer_type: "gpt2fast"
+num_training_epochs: 5
+gradient_accumulation_steps: 16
+batch_size: 4
+mixed_precision: "no"
+padding: "max_length"
+optim: "adafactor"
+weight_decay: 0.01
+learning_rate: 0.001
+scheduler: "constant"
+checkpoint_path: "pretrain_fredt5_xl_multilabel_tagging"
+logging_path: "logs"
+mode: "pretrain"
+valid: False
+save_steps: 10000000
+metric: "cer"
+gen_params:
+    max_length: 256

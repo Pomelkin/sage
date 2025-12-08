@@ -1,0 +1,3 @@
+from .t5.multilabel import T5ForConditionalGenerationTokenMultilabel
+from .t5.multiclass import T5ForConditionalGenerationTokenMulticlass
+from .t5.multilabel_lm import T5ForConditionalGenerationTokenMultilabelLM, T5ForConditionalGenerationLM

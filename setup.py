@@ -1,12 +1,7 @@
-import os
-
 from setuptools import setup, find_packages
 
 with open("README.md", mode="r", encoding="utf-8") as readme_file:
     readme = readme_file.read()
-
-setup_dir = os.path.abspath(os.path.dirname(__file__))
-augmentex_path = os.path.join(setup_dir, "wheels/augmentex-1.0.3-py3-none-any.whl")
 
 requirements = [
     "numpy",
@@ -16,25 +11,27 @@ requirements = [
     "packaging",
     "requests",
     "sentencepiece",
-    "datasets",
+    "datasets<2.20.0",
     "protobuf",
     "timeout_decorator",
-    "matplotlib>=3.2,<3.7",
-    "torch>=1.9.0,<=2.2.0",
-    "transformers>=4.20.0",
-    f"augmentex @ file://{augmentex_path}"
+    "matplotlib>=3.2,<3.9.1",
+    "torch>=1.9.0,<=2.8.0",
+    "transformers>=4.20.0,<=4.46.0",
+    "augmentex==1.3.1",
+    "accelerate",
+    "evaluate"
 ]
 
 extras_requirements = {
     "errant": [
-        "ru-core-news-lg @ https://huggingface.co/spacy/ru_core_news_lg/resolve/main/ru_core_news_lg-any-py3-none-any.whl",
-        "errant @ git+https://github.com/Askinkaty/errant/@4183e57",
+        "ru-errant",
+        "spacy>=3.7.0,<3.8.0",
         "Levenshtein"
     ]
 }
 
 setup(
-    name="sage",
+    name="sage-spelling",
     version="1.1.0",
     author="Nikita Martynov, Mark Baushenko, Alena Fenogenova and Alexandr Abramov",
     author_email="nikita.martynov.98@list.ru",
@@ -54,7 +51,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Text Editors :: Text Processing",
     ],
-    python_requires=">=3.8.0,<3.11.0",
+    python_requires=">=3.8.0",
     install_requires=requirements,
     extras_require=extras_requirements,
     keywords="sage spelling correction nlp deep learning transformers pytorch"

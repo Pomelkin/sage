@@ -47,6 +47,7 @@ class Model:
         skip_if_position_not_found: bool,
         lang: str,
         debug_mode: bool = False,
+        random_seed: int = 42
     ):
         # For debugging purposes only
         self.debug_mode = debug_mode
@@ -56,6 +57,7 @@ class Model:
             "pos": [],
         }
 
+        self.rng = np.random.default_rng(random_seed)
         self.validate_inputs(stats, confusion_matrix, typos_count, lang)
 
         self.lang = lang.strip("_ ").lower()
@@ -146,7 +148,7 @@ class Model:
         most_right = math.ceil(sequence_length * right)
         return most_left, most_right
     
-    def transform(self, sentence: str, rng: np.random.default_rng):
+    def transform(self, sentence: str):
         """Spelling corruption procedure.
 
         The algorithm follows consequtive steps:
@@ -164,7 +166,7 @@ class Model:
             sentence (str): original sentence, but with errors;
         """
         # Sample number of mistypings
-        num_typos = self.number_of_errors_per_sent.sample(rng)
+        num_typos = self.number_of_errors_per_sent.sample(self.rng)
         fabric = Fabric()
 
         for _ in range(num_typos):
@@ -173,7 +175,7 @@ class Model:
             l = len(sentence)
 
             # sample typo and corresponding interval for position
-            typo = self.type_of_typo.sample(rng)
+            typo = self.type_of_typo.sample(self.rng)
             handler = fabric.get_handler(typo)
             position_distribution = getattr(self, typo + "_positions")
             
@@ -182,7 +184,7 @@ class Model:
             effective_tries = l
             most_left, most_right = -1, -1
             while effective_tries >= 0:
-                interval_idx = position_distribution.sample(rng)
+                interval_idx = position_distribution.sample(self.rng)
                 most_left, most_right = self._factorization_scheme(interval_idx, l)
                 if most_right - most_left >= 1:  # for fixed bins that means length of sentence < 10
                     break
@@ -190,19 +192,19 @@ class Model:
             if most_right - most_left < 1:
                 continue
 
-            pos = rng.integers(low=most_left, high=most_right, size=1)[0]
+            pos = self.rng.integers(low=most_left, high=most_right, size=1)[0]
 
             # Correct the position
             pos = handler.adjust_position(
                 pos, most_left, most_right, self.skip_if_position_not_found,
-                fabric.used_positions, rng, self.lang, sentence
+                fabric.used_positions, self.rng, self.lang, sentence
             )
             if pos is not None:
                 try:
                     substitutions = getattr(self, "substitutions_for_{}".format(ord(sentence[pos].lower())))
                 except AttributeError:
                     substitutions = Distribution(getattr(SUBSTITUTION_OPTIONS, self.lang), False)
-                sentence = handler.apply(pos, sentence, self.lang, rng, substitutions)
+                sentence = handler.apply(pos, sentence, self.lang, self.rng, substitutions)
 
                 if self.debug_mode:
                     used_positions_cp = fabric.used_positions.copy()
