@@ -15,7 +15,7 @@ requirements = [
     "protobuf",
     "timeout_decorator",
     "matplotlib>=3.2,<3.9.1",
-    "torch>=1.9.0,<=2.5.1",
+    "torch>=1.9.0,<=2.8.0",
     "transformers>=4.20.0,<=4.46.0",
     "augmentex==1.3.1",
     "accelerate",
@@ -51,7 +51,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Text Editors :: Text Processing",
     ],
-    python_requires=">=3.8.0,<=3.12.6",
+    python_requires=">=3.8.0",
     install_requires=requirements,
     extras_require=extras_requirements,
     keywords="sage spelling correction nlp deep learning transformers pytorch"
