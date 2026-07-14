@@ -95,6 +95,8 @@ class SBSCConfig(BaseConfig):
             Whether to search for suitable position in a sentence when position is not found in interval;
         reference_dataset_name_or_path (bool): Path to or name of reference dataset
         reference_dataset_split (str): Dataset split to use when acquiring statistics.
+        use_stats_cache (bool): Whether to cache reference dataset statistics on disk
+            ($HOME/.cache/sage, override with SAGE_CACHE_DIR) keyed by corpus content.
     """
 
     typos_count: Optional[List[int]] = field(
@@ -126,4 +128,11 @@ class SBSCConfig(BaseConfig):
     reference_dataset_split: str = field(
         default="train",
         metadata={"help": "Dataset split to use when acquiring statistics."},
+    )
+
+    use_stats_cache: bool = field(
+        default=True,
+        metadata={
+            "help": "Whether to cache reference dataset statistics on disk "
+                    "($HOME/.cache/sage, override with SAGE_CACHE_DIR)."},
     )

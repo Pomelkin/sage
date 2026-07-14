@@ -12,8 +12,12 @@ class DatasetsAvailable(enum.Enum):
 
     MultidomainGold = "Multidomain gold dataset. For more see `ai-forever/spellcheck_punctuation_benchmark`."
     RUSpellRU = "Social media texts and blogs. For more see `ai-forever/spellcheck_punctuation_benchmark`."
-    MedSpellchecker = "Medical anamnesis. For more see `ai-forever/spellcheck_punctuation_benchmark`."
-    GitHubTypoCorpusRu = "Github commits. For more see `ai-forever/spellcheck_punctuation_benchmark`."
+    MedSpellchecker = (
+        "Medical anamnesis. For more see `ai-forever/spellcheck_punctuation_benchmark`."
+    )
+    GitHubTypoCorpusRu = (
+        "Github commits. For more see `ai-forever/spellcheck_punctuation_benchmark`."
+    )
 
     MultidomainGold_orth = "Multidomain gold dataset orthography only. For more see `ai-forever/spellcheck_benchmark`."
     RUSpellRU_orth = "Social media texts and blogs orthography only. For more see `ai-forever/spellcheck_benchmark`."
@@ -25,22 +29,32 @@ datasets_available = [dataset.name for dataset in DatasetsAvailable]
 
 
 def load_available_dataset_from_hf(
-        dataset_name: str, for_labeler: bool, split: Optional[str] = None
+    dataset_name: str, for_labeler: bool, split: Optional[str] = None
 ) -> Union[Tuple[List[str], List[str]], pd.DataFrame]:
     if dataset_name not in datasets_available:
-        raise ValueError("You provided wrong dataset name: {}\nAvailable datasets are: {}".format(
-            dataset_name, *datasets_available))
+        raise ValueError(
+            "You provided wrong dataset name: {}\nAvailable datasets are: {}".format(
+                dataset_name, *datasets_available
+            )
+        )
     source_collection = "spellcheck_punctuation_benchmark"
     if dataset_name[-4:] == "orth":
         source_collection = "spellcheck_benchmark"
         dataset_name = dataset_name[:-5]
-    dataset = load_dataset("ai-forever/{}".format(source_collection), dataset_name, split=split, trust_remote_code=True)
+    dataset = load_dataset(
+        "ai-forever/{}".format(source_collection),
+        dataset_name,
+        split=split,
+        trust_remote_code=True,
+    )
     if split is None:
-        dataset = pd.concat([dataset[split].to_pandas() for split in dataset.keys()]).reset_index(drop=True)
+        dataset = pd.concat(
+            [dataset[split].to_pandas() for split in dataset.keys()]  # ty:ignore[unresolved-attribute, invalid-argument-type]
+        ).reset_index(drop=True)  # ty:ignore[no-matching-overload]
     else:
-        dataset = dataset.to_pandas()
+        dataset = dataset.to_pandas()  # ty:ignore[unresolved-attribute]
     if for_labeler:
-        sources = dataset.source.values.tolist()
-        corrections = dataset.correction.values.tolist()
+        sources = dataset.source.values.tolist()  # ty:ignore[unresolved-attribute]
+        corrections = dataset.correction.values.tolist()  # ty:ignore[unresolved-attribute]
         return sources, corrections
-    return dataset
+    return dataset  # ty:ignore[invalid-return-type]

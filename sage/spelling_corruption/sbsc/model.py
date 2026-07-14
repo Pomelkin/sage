@@ -5,8 +5,7 @@ that is embodied in Model class.
 """
 
 import math
-from functools import reduce
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Tuple, Union
 
 import numpy as np
 
@@ -40,6 +39,10 @@ class Model:
     """
     names = [typo_type.name for typo_type in TyposTypes]
 
+    # Registered dynamically in __init__ via `_register`.
+    number_of_errors_per_sent: Distribution
+    type_of_typo: Distribution
+
     def __init__(
         self, typos_count: List[int], 
         stats: Dict[str, Dict[str, List[float]]], 
@@ -65,25 +68,30 @@ class Model:
 
         # Number of mistypings per sentence
         self._register_distribution("number_of_errors_per_sent", typos_count, False)
-        
+
         # Type of mistypings
         typos_cnt = {typo: len(v["abs"]) for typo, v in stats.items()}
-        typos = reduce(lambda x, y: x + y, [[k] * v for k, v in typos_cnt.items()])
-        self._register_distribution("type_of_typo", typos)
-        
+        self._register("type_of_typo", Distribution.from_counts(typos_cnt))
+
         # Relative positions of mistypings
         self._bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
         for typo, v in stats.items():
             # To avoid 1.s being thrown in 11th bucket
             rel_positions = [pos if pos < 1. else pos - 0.00001 for pos in v["rel"]]
-            
+
             buckets = np.digitize(rel_positions, self._bins)
             self._register_distribution(typo + "_positions", buckets)
-            
+
         # Substitutions (confusion matrix)
+        self._substitutions = {}
         for ch, candidates in confusion_matrix.items():
-            counts = reduce(lambda x, y: x + y, [[k] * v for k, v in candidates.items()])
-            self._register_distribution("substitutions_for_{}".format(ord(ch)), counts)
+            substitutions = Distribution.from_counts(candidates)
+            self._register("substitutions_for_{}".format(ord(ch)), substitutions)
+            self._substitutions[ord(ch)] = substitutions
+
+        # Options for characters missing from the confusion matrix, built once
+        # instead of on every failed lookup in `transform`.
+        self._fallback_substitutions = Distribution(getattr(SUBSTITUTION_OPTIONS, self.lang), False)
 
     @classmethod
     def validate_inputs(cls, stats: Dict[str, Dict[str, List[float]]], confusion_matrix: Dict[str, Dict[str, int]],
@@ -128,13 +136,15 @@ class Model:
                         k, sub))
         
     def _register_distribution(
-            self, distribution: str, evidences: Union[List[int], np.array], exclude_zero: Optional[bool] = False):
+            self, distribution: str, evidences: Union[List[int], np.ndarray], exclude_zero: bool = False):
+        self._register(distribution, Distribution(evidences, exclude_zero))
+
+    def _register(self, distribution: str, d: Distribution):
         if hasattr(self, distribution):
             raise ValueError("You already defined that distribution {}".format(distribution))
-        d = Distribution(evidences, exclude_zero)
         setattr(self, distribution, d)
 
-    def _factorization_scheme(self, interval_idx: int, sequence_length: int) -> [int, int]:
+    def _factorization_scheme(self, interval_idx: int, sequence_length: int) -> Tuple[int, int]:
         """Calculates exact absolute edge positions in a sentence, considering relative positions in a sentence.
 
         Args:
@@ -148,7 +158,7 @@ class Model:
         most_right = math.ceil(sequence_length * right)
         return most_left, most_right
     
-    def transform(self, sentence: str):
+    def transform(self, sentence: str, rng: Optional[Union[int, np.random.Generator]] = None):
         """Spelling corruption procedure.
 
         The algorithm follows consequtive steps:
@@ -160,51 +170,57 @@ class Model:
 
         Args:
             sentence (str): original sentence;
-            rng (np.random.default_rng): random generator;
+            rng (Union[int, np.random.Generator]): optional random generator or integer seed;
+                defaults to the model's own generator, whose state advances with
+                every call, so consecutive calls yield different corruptions
+                while the whole sequence stays reproducible via `random_seed`;
 
         Returns:
             sentence (str): original sentence, but with errors;
         """
+        if rng is None:
+            rng = self.rng
+        elif not isinstance(rng, np.random.Generator):
+            rng = np.random.default_rng(rng)
+
         # Sample number of mistypings
-        num_typos = self.number_of_errors_per_sent.sample(self.rng)
+        num_typos = self.number_of_errors_per_sent.sample(rng)
         fabric = Fabric()
 
         for _ in range(num_typos):
             # take len() for every typo, because with each
             # typo length of the sentence changes
-            l = len(sentence)
+            seqlen = len(sentence)
 
             # sample typo and corresponding interval for position
-            typo = self.type_of_typo.sample(self.rng)
+            typo = self.type_of_typo.sample(rng)
             handler = fabric.get_handler(typo)
             position_distribution = getattr(self, typo + "_positions")
-            
+
             # sample bin a.k.a. interval for typo's position
             # and initial exact position inside this interval
-            effective_tries = l
+            effective_tries = seqlen
             most_left, most_right = -1, -1
             while effective_tries >= 0:
-                interval_idx = position_distribution.sample(self.rng)
-                most_left, most_right = self._factorization_scheme(interval_idx, l)
+                interval_idx = position_distribution.sample(rng)
+                most_left, most_right = self._factorization_scheme(interval_idx, seqlen)
                 if most_right - most_left >= 1:  # for fixed bins that means length of sentence < 10
                     break
                 effective_tries -= 1
             if most_right - most_left < 1:
                 continue
 
-            pos = self.rng.integers(low=most_left, high=most_right, size=1)[0]
+            pos = rng.integers(low=most_left, high=most_right, size=1)[0]
 
             # Correct the position
             pos = handler.adjust_position(
                 pos, most_left, most_right, self.skip_if_position_not_found,
-                fabric.used_positions, self.rng, self.lang, sentence
+                fabric.used_positions, rng, self.lang, sentence
             )
             if pos is not None:
-                try:
-                    substitutions = getattr(self, "substitutions_for_{}".format(ord(sentence[pos].lower())))
-                except AttributeError:
-                    substitutions = Distribution(getattr(SUBSTITUTION_OPTIONS, self.lang), False)
-                sentence = handler.apply(pos, sentence, self.lang, self.rng, substitutions)
+                substitutions = self._substitutions.get(
+                    ord(sentence[pos].lower()), self._fallback_substitutions)
+                sentence = handler.apply(pos, sentence, self.lang, rng, substitutions)
 
                 if self.debug_mode:
                     used_positions_cp = fabric.used_positions.copy()

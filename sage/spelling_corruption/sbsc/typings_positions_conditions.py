@@ -8,6 +8,10 @@ import string
 from abc import ABCMeta, abstractmethod
 from typing import List
 
+# Hoisted out of the per-position checks: DeletionConditions.condition used to
+# rebuild this string on every call inside the position-search loop.
+PUNCTUATION_WITHOUT_HYPHEN = string.punctuation.replace("-", "")
+
 
 class Condition(metaclass=ABCMeta):
     """Base class for all conditions."""
@@ -55,8 +59,7 @@ class InsertionConditions(Condition):
 class DeletionConditions(Condition):
     @staticmethod
     def condition(pos: int, used_positions: List[int], sentence: str, lang: str) -> bool:
-        punctuation = string.punctuation.replace("-", "")
-        return pos in used_positions or sentence[pos] == " " or sentence[pos] in punctuation
+        return pos in used_positions or sentence[pos] == " " or sentence[pos] in PUNCTUATION_WITHOUT_HYPHEN
 
     @staticmethod
     def alter_positions(pos: int, used_positions: List[int]):

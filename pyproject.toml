@@ -7,7 +7,7 @@ name = "sage"
 version = "1.1.0"
 description = "SAGE: Spell checking via Augmentation and Generative distribution Emulation"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "Nikita Martynov", email = "nikita.martynov.98@list.ru"},
@@ -27,28 +27,41 @@ classifiers = [
     "Topic :: Text Editors :: Text Processing",
 ]
 
+# Base install covers sage.spelling_corruption (SBSC + Augmentex corruptors).
 dependencies = [
     "numpy",
-    "pandas", 
+    "pandas",
     "tqdm",
-    "pyyaml",
-    "packaging",
-    "requests",
-    "sentencepiece",
     "datasets>=3.6.0",
-    "protobuf",
-    "timeout_decorator",
-    "matplotlib>=3.2",
-    "torch>=1.9.0",
-    "transformers>=4.20.0",
-    "augmentex>=1.0.3"
+    "augmentex>=1.0.3",
 ]
 
 [project.optional-dependencies]
+# sage.spelling_correction: neural spellcheckers (T5, M2M100)
+correctors = [
+    "torch>=1.9.0",
+    "transformers>=4.20.0",
+    "sentencepiece",
+    "protobuf",
+    "pyyaml",
+]
+# sage.evaluation: ruspelleval metric
+evaluation = [
+    "timeout_decorator",
+]
+# sage.utils.draw_and_save_errors_distributions_comparison_charts
+charts = [
+    "matplotlib>=3.2",
+]
+# sage.evaluation: errant metric for Russian
 errant = [
-    "ru-core-news-lg @ https://huggingface.co/spacy/ru_core_news_lg/resolve/main/ru_core_news_lg-any-py3-none-any.whl",
+    "sage[evaluation]",
+    "ru-core-news-lg @ https://github.com/explosion/spacy-models/releases/download/ru_core_news_lg-3.8.0/ru_core_news_lg-3.8.0-py3-none-any.whl",
     "errant @ git+https://github.com/Askinkaty/errant/@4183e57",
     "Levenshtein",
+]
+all = [
+    "sage[correctors,evaluation,charts,errant]",
 ]
 
 [project.urls]

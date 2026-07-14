@@ -6,7 +6,7 @@ as well as API to discrete distributions (`class Distribution`).
 
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Callable, List
+from typing import Any, Optional, Callable, List, Dict, Union
 
 import numpy as np
 
@@ -16,25 +16,61 @@ from ...utils.lang_utils import INSERTION_OPTIONS
 conditions = initialize_conditions()
 MISSPELLINGS = {}
 
+# Insertion candidates converted to numpy once: rng.choice would otherwise
+# rebuild the array from the python list on every sampled insertion typo.
+_INSERTION_OPTIONS_ARRAYS = {
+    lang: np.array(getattr(INSERTION_OPTIONS, lang)) for lang in INSERTION_OPTIONS._fields
+}
+
 
 def register_misspelling(cls):
     MISSPELLINGS[cls.description()] = cls()
 
 
 class Distribution:
-    """Emulates discrete distribution."""
+    """Emulates discrete distribution.
 
-    def __init__(self, evidences: List[int], exclude_zero: bool):
+    The normalized probabilities and their cumulative sum are precomputed once:
+    `Generator.choice(..., p=...)` re-validates and re-accumulates `p` on every
+    call, which dominated the corruption hot path. `sample` reproduces
+    `rng.choice(self.values, size=1, p=self.p)[0]` bit-exactly (same values,
+    same rng state advance) via a searchsorted over the cached cumulative sum.
+    """
+
+    def __init__(self, evidences: Union[List, np.ndarray], exclude_zero: bool):
         if exclude_zero:
             evidences = [elem for elem in evidences if elem != 0]
         self.values, counts = np.unique(evidences, return_counts=True)
         self.p = counts / sum(counts)
+        self._cdf = self._make_cdf(self.p)
 
-    def sample(self, rng: np.random.default_rng):
-        if len(self.values) == 0:
+    @classmethod
+    def from_counts(cls, counts: Dict):
+        """Build the same distribution as Distribution(evidences, False) would
+        for evidences holding each key of `counts` repeated its count times,
+        without materializing that expanded list.
+        """
+        distribution = cls.__new__(cls)
+        keys = sorted(k for k, v in counts.items() if v != 0)
+        counts_ = np.array([counts[k] for k in keys], dtype=np.int64)
+        distribution.values = np.array(keys)
+        distribution.p = counts_ / sum(counts_) if len(keys) else counts_.astype(float)
+        distribution._cdf = cls._make_cdf(distribution.p)
+        return distribution
+
+    @staticmethod
+    def _make_cdf(p: np.ndarray) -> Optional[np.ndarray]:
+        if len(p) == 0:
+            return None
+        cdf = p.cumsum()
+        cdf /= cdf[-1]
+        return cdf
+
+    def sample(self, rng: np.random.Generator):
+        if self._cdf is None:
             raise ValueError("You cannot sample from empty distribution, provide some statistics first")
-        value = rng.choice(self.values, size=1, p=self.p)[0]
-        return value
+        idx = self._cdf.searchsorted(rng.random(1), side="right")[0]
+        return self.values[idx]
 
 
 class Typo(metaclass=ABCMeta):
@@ -44,6 +80,8 @@ class Typo(metaclass=ABCMeta):
         condition (typings_positions_conditions.Condition):
             condition for appropriate position of a typo in a sentence.
     """
+
+    condition: Any
 
     def __init__(self):
         self.condition = None if self.desc is None else conditions[self.desc]
@@ -64,7 +102,7 @@ class Typo(metaclass=ABCMeta):
 
     @abstractmethod
     def apply(
-            self, pos: int, sentence: str, lang: str, rng: np.random.default_rng,
+            self, pos: int, sentence: str, lang: str, rng: np.random.Generator,
             substitutions: Optional[Distribution] = None
     ) -> str:
         """Insert typo in particular `pos` in a `sentence`.
@@ -79,7 +117,7 @@ class Typo(metaclass=ABCMeta):
 
     def adjust_position(
             self, pos: int, most_left: int, most_right: int, skip_if_position_not_found: bool,
-            used_positions: List[int], rng: np.random.default_rng, lang: str, sentence: Optional[str] = None
+            used_positions: List[int], rng: np.random.Generator, lang: str, sentence: Optional[str] = None
     ) -> int:
         """Select appropriate position in interval from `most_left` to `most_right`
         starting from `pos` in a `sentence`.
@@ -124,7 +162,7 @@ class Typo(metaclass=ABCMeta):
              sentence (str): original sentence;
         """
         pos = None
-        for i, ch in enumerate(sentence):
+        for i, ch in enumerate(sentence or ""):
             if self.condition.condition(i, used_positions, sentence, lang):
                 continue
             pos = i
@@ -187,10 +225,10 @@ class Insertion(Typo):
         return "insertion"
 
     def apply(
-            self, pos: int, sentence: str, lang: str, rng: np.random.default_rng,
+            self, pos: int, sentence: str, lang: str, rng: np.random.Generator,
             substitutions: Optional[Distribution] = None
     ) -> str:
-        insertions = getattr(INSERTION_OPTIONS, lang)
+        insertions = _INSERTION_OPTIONS_ARRAYS[lang]
         insertion = rng.choice(insertions, size=1)[0]
         sentence = sentence[:pos] + insertion + sentence[pos:]
         return sentence
@@ -217,7 +255,7 @@ class Deletion(Typo):
         return "deletion"
 
     def apply(
-            self, pos: int, sentence: str, lang: str, rng: np.random.default_rng,
+            self, pos: int, sentence: str, lang: str, rng: np.random.Generator,
             substitutions: Optional[Distribution] = None
     ) -> str:
         sentence = sentence[:pos] + sentence[min(len(sentence), pos + 1):]
@@ -244,7 +282,7 @@ class Transposition(Typo):
         return "transposition"
 
     def apply(
-            self, pos: int, sentence: str, lang: str, rng: np.random.default_rng,
+            self, pos: int, sentence: str, lang: str, rng: np.random.Generator,
             substitutions: Optional[Distribution] = None
     ) -> str:
         sentence = sentence[:pos] + sentence[pos + 1] + sentence[pos] + sentence[min(len(sentence), pos + 2):]
@@ -271,9 +309,10 @@ class Substitution(Typo):
         return "substitution"
 
     def apply(
-            self, pos: int, sentence: str, lang: str, rng: np.random.default_rng,
+            self, pos: int, sentence: str, lang: str, rng: np.random.Generator,
             substitutions: Optional[Distribution] = None
     ) -> str:
+        assert substitutions is not None
         substitution = substitutions.sample(rng)
         if sentence[pos].isupper():
             substitution = substitution.upper()
@@ -301,7 +340,7 @@ class ExtraSeparator(Typo):
         return "extra_separator"
 
     def apply(
-            self, pos: int, sentence: str, lang: str, rng: np.random.default_rng,
+            self, pos: int, sentence: str, lang: str, rng: np.random.Generator,
             substitutions: Optional[Distribution] = None
     ) -> str:
         sentence = sentence[:pos] + " " + sentence[pos:]
@@ -328,7 +367,7 @@ class MissingSeparator(Typo):
         return "missing_separator"
 
     def apply(
-            self, pos: int, sentence: str, lang: str, rng: np.random.default_rng,
+            self, pos: int, sentence: str, lang: str, rng: np.random.Generator,
             substitutions: Optional[Distribution] = None
     ) -> str:
         sentence = sentence[:pos] + sentence[min(len(sentence), pos + 1):]

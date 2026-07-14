@@ -7,10 +7,15 @@ given source sentence and corresponding corrected sentence.
 import re
 import enum
 import string
-from typing import List, Dict
+from typing import Dict, List, Tuple
 
 import numpy as np
 from tqdm.auto import tqdm
+
+# NB: string.punctuation contains "[\]", so inside the character class "\]"
+# reads as an escaped "]" — backslashes themselves are intentionally NOT
+# stripped, matching the historical behavior.
+_PUNCTUATION_PATTERN = re.compile("[{}]".format(string.punctuation.replace("-", "")))
 
 
 class TyposTypes(enum.Enum):
@@ -26,28 +31,36 @@ class TyposTypes(enum.Enum):
 
 def make_levenshtein_table(source, correct, allow_transpositions=False, removal_cost=1.0, insertion_cost=1.0,
                            replace_cost=1.0, transposition_cost=1.0):
+    # The DP is filled with plain lists: scalar indexing into a numpy array
+    # from the inner loop is several times slower. The arithmetic (and hence
+    # the resulting table) is identical, float64 either way.
     first_length, second_length = len(source), len(correct)
-    table = np.zeros(shape=(first_length + 1, second_length + 1), dtype=float)
-    for i in range(1, second_length + 1):
-        table[0][i] = i
+    table = [[0.0] * (second_length + 1) for _ in range(first_length + 1)]
+    table[0] = [float(j) for j in range(second_length + 1)]
     for i in range(1, first_length + 1):
-        table[i][0] = i
+        table[i][0] = float(i)
+    prev_prev = None
+    prev = table[0]
     for i, first_word in enumerate(source, 1):
+        cur = table[i]
         for j, second_word in enumerate(correct, 1):
             if first_word == second_word:
-                table[i][j] = table[i-1][j-1]
+                cur[j] = prev[j-1]
             else:
-                table[i][j] = min((table[i-1][j-1] + replace_cost,
-                                   table[i][j-1] + removal_cost,
-                                   table[i-1][j] + insertion_cost))
-                if (allow_transpositions and min(i, j) >= 2
+                dist = min((prev[j-1] + replace_cost,
+                            cur[j-1] + removal_cost,
+                            prev[j] + insertion_cost))
+                if (allow_transpositions and j >= 2 and prev_prev is not None
                         and first_word == correct[j-2] and second_word == source[i-2]):
-                    table[i][j] = min(table[i][j], table[i-2][j-2] + transposition_cost)
-    return table
+                    dist = min(dist, prev_prev[j-2] + transposition_cost)
+                cur[j] = dist
+        prev_prev = prev
+        prev = cur
+    return np.asarray(table, dtype=float)
 
 
-def process_group(source: str, correction: str, levenshtein_table: np.array) -> \
-        [Dict[str, List[int]], Dict[str, List[int]], Dict[str, Dict[str, int]]]:
+def process_group(source: str, correction: str, levenshtein_table: np.ndarray) -> \
+        Tuple[Dict[str, List[int]], Dict[str, List[int]], Dict[str, Dict[str, int]]]:
 
     """
     Identify type of mistyping and its position.
@@ -137,7 +150,7 @@ def process_group(source: str, correction: str, levenshtein_table: np.array) -> 
 
 def process_mistypings(
     src: List[str], corr: List[str],
-) -> [Dict[str, Dict[str, List[float]]], Dict[str, Dict[str, int]], List[int]]:
+) -> Tuple[Dict[str, Dict[str, List[float]]], Dict[str, Dict[str, int]], List[int]]:
         
     """
     Processes allignment groups and outputs mistypings distribution.
@@ -163,12 +176,11 @@ def process_mistypings(
     global_stats = {typo_type.name: {"abs": [], "rel": []} for typo_type in TyposTypes}
     global_cm = {}
     mistypings_cnt = []
-    pattern = string.punctuation.replace("-", "")
 
-    l = len(src)
-    for source, correction in tqdm(zip(src, corr), total=l):
-        source = re.sub(r"[{}]".format(pattern), "", source.lower().strip())
-        correction = re.sub(r"[{}]".format(pattern), "", correction.lower().strip())
+    total = len(src)
+    for source, correction in tqdm(zip(src, corr), total=total):
+        source = _PUNCTUATION_PATTERN.sub("", source.lower().strip())
+        correction = _PUNCTUATION_PATTERN.sub("", correction.lower().strip())
         
         dp = make_levenshtein_table(source, correction, allow_transpositions=True)
         # We gather distributions from source sentences, NOT from corrections
