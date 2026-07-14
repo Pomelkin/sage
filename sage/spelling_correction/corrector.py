@@ -16,16 +16,30 @@ To launch one of the available models:
 
 import os
 import enum
+import yaml
+from accelerate import Accelerator
 from abc import ABCMeta, abstractmethod
 from typing import List, Union, Dict, Optional, Any
 
 import pandas as pd
+from torch.utils.data import DataLoader
+from transformers import T5PreTrainedModel, T5ForConditionalGeneration
 
-from ..evaluation.scorer import Scorer
+from .training.data_processor import get_tokenized_datasets, TextCollatorWithPadding
+from .training.trainer import SageTrainer
 from ..utils.data_load_utils import load_available_dataset_from_hf, DatasetsAvailable
-
+from .models import T5ForConditionalGenerationTokenMultilabel, T5ForConditionalGenerationTokenMulticlass, \
+    T5ForConditionalGenerationTokenMultilabelLM, T5ForConditionalGenerationLM
 
 datasets_available = [dataset.name for dataset in DatasetsAvailable]
+models_available = [T5PreTrainedModel]
+models_names = {
+    't5_encoder_multilabel': T5ForConditionalGenerationTokenMultilabel,
+    't5_encoder_multiclass': T5ForConditionalGenerationTokenMulticlass,
+    't5_encoder_multilabel_lm': T5ForConditionalGenerationTokenMultilabelLM,
+    't5_encoder_lm': T5ForConditionalGenerationLM,
+    't5': T5ForConditionalGeneration
+}
 
 
 class AvailableCorrectors(enum.Enum):
@@ -92,6 +106,7 @@ class Corrector(metaclass=ABCMeta):
         :return: mapping between metric's name and its corresponding value
         :rtype: dict[str, float]
         """
+        from ..evaluation.scorer import Scorer
         dataset_name_or_path = str(dataset_name_or_path)
         if dataset_name_or_path in datasets_available:
             sources, corrections = load_available_dataset_from_hf(
@@ -150,3 +165,70 @@ class Corrector(metaclass=ABCMeta):
             **generation_params,
     ) -> List[List[Any]]:
         """Correct multiple sentences"""
+
+    def train(self, config_path: str):
+        with open(config_path) as infile:
+            config = yaml.safe_load(infile)
+        accelerator = Accelerator(mixed_precision=config['mixed_precision'],
+                                  log_with=config['tracker_name'],
+                                  project_dir=config['logging_path'],
+                                  gradient_accumulation_steps=config['gradient_accumulation_steps'],
+                                  split_batches=True)
+        accelerator.init_trackers(
+            project_name="spell_pretraining",
+            config={'max_length': config['dataset']['max_length'],
+                    'num_training_epochs': config['num_training_epochs'],
+                    'gradient_accumulation_steps': config['gradient_accumulation_steps'],
+                    'batch_size': config['batch_size'],
+                    'mixed_precision': config['mixed_precision'],
+                    'padding': config['padding'],
+                    'optim': config['optim'],
+                    'weight_decay': config['weight_decay'],
+                    'learning_rate': config['learning_rate'],
+                    'scheduler': config['scheduler'],
+                    'mode': config['mode'],
+                    'checkpoint_path': config['checkpoint_path']
+                    }
+        )
+        with accelerator.main_process_first():
+            self.model = models_names[config['model_type']].from_pretrained(self.model_name_or_path)
+            train_tokenized, valid_tokenized = get_tokenized_datasets(self.tokenizer, **config['dataset'])
+        train_loader = DataLoader(train_tokenized,
+                                  batch_size=config['batch_size'],
+                                  shuffle=False,
+                                  pin_memory=False,
+                                  num_workers=config['dataset']['num_workers'],
+                                  collate_fn=TextCollatorWithPadding(self.tokenizer, self.model))
+        valid = config['valid']
+        if valid_tokenized is not None:
+            valid_loader = DataLoader(valid_tokenized,
+                                      batch_size=config['batch_size'],
+                                      shuffle=False,
+                                      pin_memory=False,
+                                      num_workers=config['dataset']['num_workers'],
+                                      collate_fn=TextCollatorWithPadding(self.tokenizer, self.model))
+        else:
+            valid_loader = None
+            valid = False
+
+        trainer = SageTrainer(
+            accelerator,
+            self.model,
+            self.tokenizer,
+            optimizer_name=config['optim'],
+            scheduler_type=config['scheduler'],
+            train_loader=train_loader,
+            valid_loader=valid_loader,
+            metric=config['metric'],
+            learning_rate=config['learning_rate'],
+            weight_decay=config['weight_decay'],
+            num_training_epochs=config['num_training_epochs'],
+            gradient_accumulation_steps=config['gradient_accumulation_steps'],
+            is_valid=valid,
+            save_steps=config['save_steps'],
+            checkpoint_path=config['checkpoint_path'],
+            mode=config['mode'],
+            gen_params=config['gen_params']
+        )
+
+        trainer.fit()

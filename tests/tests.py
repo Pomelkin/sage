@@ -14,6 +14,7 @@ logger.setLevel(logging.INFO)
 
 SEED = 42
 seed = np.random.default_rng(SEED)
+LANG = "rus"
 
 
 class AugmenterTests(unittest.TestCase):
@@ -354,10 +355,10 @@ class AugmenterTests(unittest.TestCase):
                 "confusion_matrix": {" ": {" ": 1}},
                 "skip_if_position_not_found": skip_mode,
                 "debug_mode": True,
-                "lang": "ru",
+                "lang": LANG,
             }
             m = Model(**params)
-            m.transform(sentence, seed)
+            m.transform(sentence)
             for pos, pre_positions, post_positions in \
                     zip(m.stats["pos"], m.stats["used_positions_pre"], m.stats["used_positions_after"]):
                 self.assertFalse(pos in pre_positions, "{} in {}".format(pos, pre_positions))
@@ -381,11 +382,11 @@ class AugmenterTests(unittest.TestCase):
                 "confusion_matrix": {" ": {" ": 1}},
                 "skip_if_position_not_found": skip_mode,
                 "debug_mode": True,
-                "lang": "ru",
+                "lang": LANG,
             }
             m = Model(**params)
-            actual_transform1 = m.transform(sentence1, seed)
-            actual_transform2 = m.transform(sentence2, seed)
+            actual_transform1 = m.transform(sentence1)
+            actual_transform2 = m.transform(sentence2)
 
             expected_sentence1 = sentence1.replace("D", "")
             self.assertEqual(
@@ -417,12 +418,12 @@ class AugmenterTests(unittest.TestCase):
                 "confusion_matrix": {"ф": {"ъ": 1}},
                 "skip_if_position_not_found": skip_mode,
                 "debug_mode": True,
-                "lang": "ru",
+                "lang": LANG,
             }
             m = Model(**params)
-            actual_transform1 = m.transform(sentence1, seed)
-            actual_transform2 = m.transform(sentence2, seed)
-            actual_transform3 = m.transform(sentence3, seed)
+            actual_transform1 = m.transform(sentence1)
+            actual_transform2 = m.transform(sentence2)
+            actual_transform3 = m.transform(sentence3)
 
             expected_transform2 = sentence2.replace("Ф", "Ъ")
             expected_transform3 = sentence3.replace("ф", "ъ")
@@ -457,12 +458,12 @@ class AugmenterTests(unittest.TestCase):
                 "confusion_matrix": {" ": {" ": 1}},
                 "skip_if_position_not_found": skip_mode,
                 "debug_mode": True,
-                "lang": "ru",
+                "lang": LANG,
             }
             m = Model(**params)
-            actual_transform1 = m.transform(sentence1, seed)
-            actual_transform2 = m.transform(sentence2, seed)
-            actual_transform3 = m.transform(sentence3, seed)
+            actual_transform1 = m.transform(sentence1)
+            actual_transform2 = m.transform(sentence2)
+            actual_transform3 = m.transform(sentence3)
             d_transform = {elem: pos for pos, elem in enumerate(actual_transform3) if elem in string.punctuation}
 
             self.assertEqual(actual_transform1, sentence1, "{} vs {}".format(actual_transform1, sentence1))
@@ -499,11 +500,11 @@ class AugmenterTests(unittest.TestCase):
                 "confusion_matrix": {" ": {" ": 1}},
                 "skip_if_position_not_found": skip_mode,
                 "debug_mode": True,
-                "lang": "ru",
+                "lang": LANG,
             }
             m = Model(**params)
-            actual_transform1 = m.transform(sentence1, seed)
-            actual_transform2 = m.transform(sentence2, seed)
+            actual_transform1 = m.transform(sentence1)
+            actual_transform2 = m.transform(sentence2)
 
             expected_transform2 = sentence2.replace("dd", "d d")
             self.assertEqual(actual_transform1, sentence1, "{} vs {}".format(actual_transform1, sentence1))
@@ -535,11 +536,11 @@ class AugmenterTests(unittest.TestCase):
                 "confusion_matrix": {" ": {" ": 1}},
                 "skip_if_position_not_found": skip_mode,
                 "debug_mode": True,
-                "lang": "ru",
+                "lang": LANG,
             }
             m = Model(**params)
-            actual_transform1 = m.transform(sentence1, seed)
-            actual_transform2 = m.transform(sentence2, seed)
+            actual_transform1 = m.transform(sentence1)
+            actual_transform2 = m.transform(sentence2)
 
             self.assertEqual(actual_transform1, sentence1, "{} vs {}".format(actual_transform1, sentence1))
             self.assertEqual(actual_transform2, sentence1, "{} vs {}".format(actual_transform2, sentence1))
@@ -587,10 +588,10 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         m = Model(**params)
-        result = m.transform(sentence, seed)
+        result = m.transform(sentence)
         self.assertEqual(result, "")
 
     def test_transform_single(self):
@@ -623,7 +624,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         m = Model(**params)
 
@@ -633,7 +634,7 @@ class AugmenterTests(unittest.TestCase):
             error2interval[k] = np.digitize(v["rel"][0], bins)
 
         for _ in range(len(stats) * 3):
-            result = m.transform(sentence, seed)
+            result = m.transform(sentence)
             global_stats, global_cm, mistypings_cnt = process_mistypings([result], [sentence])
 
             for k, v in global_stats.items():
@@ -672,7 +673,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         m = Model(**params)
         bins = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
@@ -681,7 +682,7 @@ class AugmenterTests(unittest.TestCase):
             error2interval[k] = np.digitize(v["rel"][0], bins)
         for i in range(15):
             sentence = "a" * i
-            result = m.transform(sentence, seed)
+            result = m.transform(sentence)
             global_stats, global_cm, mistypings_cnt = process_mistypings([result], [sentence])
             if sum(mistypings_cnt) == 0:
                 self.assertEqual(sentence, result)
@@ -702,7 +703,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         m = Model(**params)
         for sample_length in range(10, 1000):
@@ -748,7 +749,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "Rus"
+            "lang": "Ru"
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -759,7 +760,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -770,7 +771,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -785,7 +786,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -816,7 +817,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -831,7 +832,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -842,7 +843,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -857,7 +858,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -872,7 +873,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         model = Model(**params)
 
@@ -890,7 +891,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -905,7 +906,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -936,7 +937,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -951,7 +952,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {"фвыа": {"a": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -966,7 +967,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {"a": {"asdf": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -981,7 +982,7 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {"a": {"b": -1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         self.assertRaises(ValueError, Model, **params)
 
@@ -1022,12 +1023,12 @@ class AugmenterTests(unittest.TestCase):
             "confusion_matrix": {" ": {" ": 1}},
             "skip_if_position_not_found": True,
             "debug_mode": True,
-            "lang": "ru",
+            "lang": LANG,
         }
         m = Model(**params)
         results = []
         for sentence in sentences:
-            results.append(m.transform(sentence, seed))
+            results.append(m.transform(sentence))
 
         self.assertEqual(results[0], "")
         global_stats, global_cm, mistypings_cnt = process_mistypings(results[1:], sentences[1:])

@@ -53,6 +53,7 @@ a complete solution that you need when working on a spelling problem:
   You can test them out right here [![Try Model Generation In Colab!](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ai-forever/sage/blob/main/notebooks/text_correction_demo.ipynb)
 - 🧩 Augment your data with spelling corruption algorithms, take a look at a quick demo [![Try Model Generation In Colab!](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ai-forever/sage/blob/main/notebooks/text_corruption_demo.ipynb)
 - 📊 Evaluate performance of spelling correction tools.
+- 🚂 Finetune your own model based on our open checkpoints [![Try Model Generation In Colab!](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1JBezk_Cxy8rgclsjl3otY_gaCgZC3G7F?usp=sharing)
 
 ## News
 🔥 **[2024-01-18]**: Our paper *"A Methodology for Generative Spelling Correction via Natural Spelling Errors Emulation across Multiple Domains and Languages"* is accepted for EACL 2024 conference!
@@ -85,12 +86,10 @@ pip install .
 ```
 
 To install extra requirements that you are going to need when working with ERRANT-based metric run
+
 ```commandline
+python -m spacy download ru_core_news_lg
 pip install -e ".[errant]"
-```
-or just
-```commandline
-pip install -e .[errant]
 ```
 
 ### Editable install

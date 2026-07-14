@@ -13,7 +13,7 @@ def _draw_distributions_with_spines(
 
     axes[row][column].hist(reference_values, bins=20, ec="black", fc="red", label="Reference", density=True)
     axes[row][column].hist(actual_values, bins=20, ec="black", fc="green", label="Actual", alpha=0.7, density=True)
-    axes[row][column].grid(b=True, color='grey', linestyle='-.', linewidth=0.5, alpha=0.3)
+    axes[row][column].grid(True, color='grey', linestyle='-.', linewidth=0.5, alpha=0.3)
     for s in ['top', 'bottom', 'left', 'right']:
         axes[row][column].spines[s].set_visible(False)
     axes[row][column].set_title(title)
@@ -81,7 +81,7 @@ def draw_and_save_errors_distributions_comparison_charts(
     ax[0][1].barh(ids, list(d_act.values()), width, color='green', label='Actual')
     ax[0][1].barh(ids + width, list(d_ref.values()), width, color='red', label='Reference')
     ax[0][1].set(yticks=ids + width, yticklabels=labels)
-    ax[0][1].grid(b=True, color='grey', linestyle='-.', linewidth=0.5, alpha=0.3)
+    ax[0][1].grid(True, color='grey', linestyle='-.', linewidth=0.5, alpha=0.3)
     for s in ['top', 'bottom', 'left', 'right']:
         ax[0][1].spines[s].set_visible(False)
     ax[0][1].legend()
