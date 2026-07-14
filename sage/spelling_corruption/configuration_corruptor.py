@@ -27,10 +27,7 @@ from typing import List, Dict, Union, Optional
 
 @dataclass
 class BaseConfig:
-    lang: str = field(
-        default="rus",
-        metadata={"help": "Source language rus/eng"}
-    )
+    lang: str = field(default="rus", metadata={"help": "Source language rus/eng"})
 
     random_seed: Optional[int] = field(
         default=42,
@@ -47,6 +44,7 @@ class WordAugConfig(BaseConfig):
         max_aug (int): The maximum amount of augmentation. Defaults to 5.
         unit_prob (float): Percentage of the phrase to which augmentations will be applied. Defaults to 0.3.
     """
+
     min_aug: Optional[int] = field(
         default=1,
         metadata={"help": "The minimum amount of augmentation. Defaults to 1."},
@@ -60,7 +58,8 @@ class WordAugConfig(BaseConfig):
     unit_prob: Optional[float] = field(
         default=0.3,
         metadata={
-            "help": "Percentage of the phrase to which augmentations will be applied. Defaults to 0.3."}
+            "help": "Percentage of the phrase to which augmentations will be applied. Defaults to 0.3."
+        },
     )
 
 
@@ -85,9 +84,12 @@ class CharAugConfig(WordAugConfig):
 class SBSCConfig(BaseConfig):
     """Config for statistic-based spelling corruption.
 
+    The number of typos per sentence is always estimated from the reference
+    corpus; bound it with :min_typos:/:max_typos: and optionally rescale it to
+    the length of the corrupted sentence with :scale_typos_by_length:.
+
     Attributes:
         lang (str): source language;
-        typos_count (List[int]): number of typos per sentence;
         stats (Dict[str, Dict[str, List[float]]]):
             types of typos and their absolute and relative positions in a sentence;
         confusion_matrix (Dict[str, Dict[str, int]]): Candidate replacements with corresponding frequencies;
@@ -97,16 +99,20 @@ class SBSCConfig(BaseConfig):
         reference_dataset_split (str): Dataset split to use when acquiring statistics.
         use_stats_cache (bool): Whether to cache reference dataset statistics on disk
             ($HOME/.cache/sage, override with SAGE_CACHE_DIR) keyed by corpus content.
+        min_typos (int): Lower bound on the number of typos per sentence: corpus
+            counts below it are dropped from the empirical distribution (truncation,
+            not clamping). The default of 1 guarantees every sentence gets corrupted.
+        max_typos (Optional[int]): Upper bound on the number of typos per sentence;
+            corpus counts above it are dropped likewise.
+        scale_typos_by_length (bool): Rescale the sampled number of typos by
+            len(sentence) / median sentence length of the reference corpus.
     """
-
-    typos_count: Optional[List[int]] = field(
-        default=None,
-        metadata={"help": "Number of errors per sentence"},
-    )
 
     stats: Optional[Dict[str, Dict[str, List[float]]]] = field(
         default=None,
-        metadata={"help": "Relative and absolute positions of errors of corresponding types"},
+        metadata={
+            "help": "Relative and absolute positions of errors of corresponding types"
+        },
     )
 
     confusion_matrix: Optional[Dict[str, Dict[str, int]]] = field(
@@ -117,7 +123,8 @@ class SBSCConfig(BaseConfig):
     skip_if_position_not_found: bool = field(
         default=True,
         metadata={
-            "help": "Whether to search for suitable position in a sentence when position is not found in interval"},
+            "help": "Whether to search for suitable position in a sentence when position is not found in interval"
+        },
     )
 
     reference_dataset_name_or_path: Optional[Union[str, os.PathLike]] = field(
@@ -134,5 +141,31 @@ class SBSCConfig(BaseConfig):
         default=True,
         metadata={
             "help": "Whether to cache reference dataset statistics on disk "
-                    "($HOME/.cache/sage, override with SAGE_CACHE_DIR)."},
+            "($HOME/.cache/sage, override with SAGE_CACHE_DIR)."
+        },
+    )
+
+    min_typos: int = field(
+        default=1,
+        metadata={
+            "help": "Lower bound on the number of typos per sentence; corpus counts "
+            "below it are dropped from the empirical distribution. "
+            "The default of 1 guarantees every sentence gets corrupted."
+        },
+    )
+
+    max_typos: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "Upper bound on the number of typos per sentence; corpus "
+            "counts above it are dropped from the empirical distribution."
+        },
+    )
+
+    scale_typos_by_length: bool = field(
+        default=True,
+        metadata={
+            "help": "Rescale the sampled number of typos by "
+            "len(sentence) / median sentence length of the reference corpus."
+        },
     )

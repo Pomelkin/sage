@@ -15,7 +15,7 @@ from tqdm.auto import tqdm
 # NB: string.punctuation contains "[\]", so inside the character class "\]"
 # reads as an escaped "]" — backslashes themselves are intentionally NOT
 # stripped, matching the historical behavior.
-_PUNCTUATION_PATTERN = re.compile("[{}]".format(string.punctuation.replace("-", "")))
+PUNCTUATION_PATTERN = re.compile("[{}]".format(string.punctuation.replace("-", "")))
 
 
 class TyposTypes(enum.Enum):
@@ -179,8 +179,8 @@ def process_mistypings(
 
     total = len(src)
     for source, correction in tqdm(zip(src, corr), total=total):
-        source = _PUNCTUATION_PATTERN.sub("", source.lower().strip())
-        correction = _PUNCTUATION_PATTERN.sub("", correction.lower().strip())
+        source = PUNCTUATION_PATTERN.sub("", source.lower().strip())
+        correction = PUNCTUATION_PATTERN.sub("", correction.lower().strip())
         
         dp = make_levenshtein_table(source, correction, allow_transpositions=True)
         # We gather distributions from source sentences, NOT from corrections

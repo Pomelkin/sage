@@ -15,9 +15,9 @@ import json
 import os
 from typing import Dict, List, Optional, Tuple
 
-_CACHE_FORMAT = 1
+_CACHE_FORMAT = 2
 
-StatsTuple = Tuple[Dict[str, Dict[str, List[float]]], Dict[str, Dict[str, int]], List[int]]
+StatsTuple = Tuple[Dict[str, Dict[str, List[float]]], Dict[str, Dict[str, int]], List[int], float]
 
 
 def _cache_dir() -> str:
@@ -48,17 +48,25 @@ def load(key: str) -> Optional[StatsTuple]:
     if not isinstance(payload, dict) or payload.get("format") != _CACHE_FORMAT:
         return None
     try:
-        return payload["stats"], payload["confusion_matrix"], payload["typos_count"]
+        return (
+            payload["stats"],
+            payload["confusion_matrix"],
+            payload["typos_count"],
+            payload["corpus_median_len"],
+        )
     except KeyError:
         return None
 
 
-def save(key: str, stats: Dict, confusion_matrix: Dict, typos_count: List[int]) -> None:
+def save(
+    key: str, stats: Dict, confusion_matrix: Dict, typos_count: List[int], corpus_median_len: float
+) -> None:
     payload = {
         "format": _CACHE_FORMAT,
         "stats": stats,
         "confusion_matrix": confusion_matrix,
         "typos_count": typos_count,
+        "corpus_median_len": corpus_median_len,
     }
     directory = _cache_dir()
     tmp_path = os.path.join(directory, ".tmp-{}-{}.json".format(os.getpid(), key))
