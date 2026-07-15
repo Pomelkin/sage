@@ -145,9 +145,11 @@ class SBSCCorruptor(Corruptor[StatisticBasedSpellingCorruption]):
             action (Optional[str]): ignored, kept for interface compatibility;
             seed (Optional[int]): when None (default), the internal generator
                 is used and advanced, so consecutive calls yield different
-                corruptions while the whole sequence stays reproducible via
-                config's :random_seed:; when given, the call is deterministic
-                and does not affect the internal generator;
+                corruptions (reproducible when config's :random_seed: is set;
+                with the default None the generator is lazily seeded in the
+                calling process, e.g. per DataLoader worker); when given, the
+                call is deterministic and does not affect the internal
+                generator;
         """
         return self.engine.corrupt(sentence, seed=seed)
 

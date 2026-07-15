@@ -52,7 +52,7 @@ class Model:
         skip_if_position_not_found: bool,
         lang: str,
         debug_mode: bool = False,
-        random_seed: int = 42,
+        random_seed: Optional[int] = None,
         min_typos: int = 1,
         max_typos: Optional[int] = None,
         scale_typos_by_length: bool = True,
@@ -87,7 +87,13 @@ class Model:
         self.scale_typos_by_length = scale_typos_by_length
         self.corpus_median_len = corpus_median_len
 
-        self.rng = np.random.default_rng(random_seed)
+        # With :random_seed: given the generator is created eagerly; with None
+        # it is created lazily on first use (see the `rng` property), so that
+        # per-process seeding done after construction — e.g. a DataLoader
+        # `worker_init_fn` calling `np.random.seed` — is picked up.
+        self._rng: Optional[np.random.Generator] = (
+            None if random_seed is None else np.random.default_rng(random_seed)
+        )
         self.validate_inputs(stats, confusion_matrix, typos_count, lang)
 
         self.lang = lang.strip("_ ").lower()
@@ -138,6 +144,26 @@ class Model:
         self._fallback_substitutions = Distribution(
             getattr(SUBSTITUTION_OPTIONS, self.lang), False
         )
+
+    @property
+    def rng(self) -> np.random.Generator:
+        """Internal random generator.
+
+        When :random_seed: was None, the generator is created lazily here,
+        seeded from numpy's global random state (`np.random`). This way a
+        model constructed in the main process (e.g. inside a collator) picks
+        up per-worker seeding performed later by a DataLoader
+        `worker_init_fn` (such as Lightning's `pl_worker_init_function`).
+        Note that `np.random.default_rng()` alone would NOT see that seeding:
+        it draws fresh OS entropy and ignores `np.random.seed`.
+        """
+        if self._rng is None:
+            self._rng = np.random.default_rng(np.random.randint(0, 2**32))
+        return self._rng
+
+    @rng.setter
+    def rng(self, value: np.random.Generator) -> None:
+        self._rng = value
 
     @classmethod
     def validate_inputs(
@@ -288,8 +314,10 @@ class Model:
             sentence (str): original sentence;
             rng (Union[int, np.random.Generator]): optional random generator or integer seed;
                 defaults to the model's own generator, whose state advances with
-                every call, so consecutive calls yield different corruptions
-                while the whole sequence stays reproducible via `random_seed`;
+                every call, so consecutive calls yield different corruptions.
+                With :random_seed: set the whole sequence is reproducible; with
+                the default None the generator is lazily seeded from numpy's
+                global random state on first call (see the `rng` property);
 
         Returns:
             sentence (str): original sentence, but with errors;

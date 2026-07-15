@@ -6,7 +6,10 @@ Examples:
         reference_dataset_name_or_path="RUSpellRU",
     )
     # Consecutive calls advance the internal generator: each call gives a new
-    # corruption, and the whole sequence is reproducible via :random_seed:.
+    # corruption. With the default :random_seed:=None the generator is lazily
+    # seeded from numpy's global random state on first use, so per-worker
+    # seeding (e.g. a DataLoader `worker_init_fn`) is picked up; pass an
+    # explicit :random_seed: to make the whole sequence reproducible.
     print(corruptor.corrupt(sentence))
 
     # A detached, deterministic one-off corruption:
@@ -90,7 +93,7 @@ class StatisticBasedSpellingCorruption:
         skip_if_position_not_found: bool = True,
         reference_dataset_name_or_path: Optional[Union[str, os.PathLike]] = None,
         reference_dataset_split: str = "train",
-        random_seed: Optional[int] = 42,
+        random_seed: Optional[int] = None,
         use_stats_cache: bool = True,
         min_typos: int = 1,
         max_typos: Optional[int] = None,
@@ -187,7 +190,7 @@ class StatisticBasedSpellingCorruption:
             confusion_matrix=confusion_matrix_,
             skip_if_position_not_found=skip_if_position_not_found,
             lang=lang,
-            random_seed=random_seed,  # ty:ignore[invalid-argument-type]
+            random_seed=random_seed,
             min_typos=min_typos,
             max_typos=max_typos,
             scale_typos_by_length=scale_typos_by_length,
@@ -201,10 +204,13 @@ class StatisticBasedSpellingCorruption:
     def reseed(self, seed: Optional[int] = None) -> None:
         """Reset the internal random generator.
 
-        Useful for e.g. DataLoader workers, which inherit an identical copy of
-        the corruptor and would otherwise all produce the same random stream.
+        With an explicit :seed: the generator is reset deterministically.
+        With :seed:=None the generator is dropped and will be lazily re-seeded
+        from numpy's global random state on next use — handy in DataLoader
+        workers, which inherit an identical copy of the corruptor and would
+        otherwise all produce the same random stream.
         """
-        self.model.rng = np.random.default_rng(seed)
+        self.model._rng = None if seed is None else np.random.default_rng(seed)
 
     def corrupt(self, sentence: str, seed: Optional[int] = None) -> str:
         """Corrupt a sentence.
@@ -213,8 +219,8 @@ class StatisticBasedSpellingCorruption:
             sentence (str): original sentence;
             seed (Optional[int]): when None (default), the internal generator
                 is used and advanced, so consecutive calls yield different
-                corruptions while the whole sequence stays reproducible via
-                :random_seed:; when given, the call is deterministic and does
+                corruptions (reproducible when :random_seed: was given at
+                construction); when given, the call is deterministic and does
                 not affect the internal generator;
         """
         rng = self.model.rng if seed is None else np.random.default_rng(seed)

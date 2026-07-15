@@ -30,8 +30,12 @@ class BaseConfig:
     lang: str = field(default="rus", metadata={"help": "Source language rus/eng"})
 
     random_seed: Optional[int] = field(
-        default=42,
-        metadata={"help": "The random state for the application of augmentations."},
+        default=None,
+        metadata={
+            "help": "The random state for the application of augmentations. "
+            "When None, the generator is seeded lazily at first use, picking up "
+            "per-worker seeding (e.g. a DataLoader worker_init_fn)."
+        },
     )
 
 
